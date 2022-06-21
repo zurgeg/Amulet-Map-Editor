@@ -2,7 +2,7 @@
     "app_name": "amulet-editor",
     "display_name": "Amulet Editor",
     "author": "James Clare, Ben Gothard et al.",
-    "version": "0.8.10",
+    "version": "1.0.0",
     "main_module": "src/main/python/amulet_editor/main.py",
     "public_settings": [
         "app_name",

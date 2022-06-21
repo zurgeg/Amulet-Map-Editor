@@ -9,12 +9,12 @@ from amulet_editor.interface.components import (
     QIconButton,
 )
 from amulet_editor.interface.windows._file_dialog import OpenFileDialog
-from amulet_editor.models.package import AmuletPlugin
+from amulet_editor.models.package import AmuletTool
 from amulet_editor.tools.packages import Packages
 from amulet_editor.tools.settings import Settings
 from amulet_editor.tools.startup import Startup
 from PySide6.QtCore import QCoreApplication, QRect, QSize, Qt
-from PySide6.QtGui import QAction, QKeyEvent, QMouseEvent
+from PySide6.QtGui import QAction, QKeyEvent, QMouseEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -32,6 +32,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+MINIMUM_PANEL_WIDTH = 250
 
 
 class AmuletWindow(QMainWindow):
@@ -51,6 +53,9 @@ class AmuletWindow(QMainWindow):
         self.btng_menus.buttons()[0].setChecked(True)
         self._show_menu_item(self._active_plugin)
 
+        # Connect signals
+        self.spl_horizontal.splitterMoved.connect(self._fix_panel_sizes)
+
         # Connect restyle signal and apply current theme
         appearance.changed.connect(self._theme_changed)
 
@@ -68,7 +73,27 @@ class AmuletWindow(QMainWindow):
 
             self.mn_appearance.addAction(action)
 
-    def _get_dynamic_menu_button(self, plugin: AmuletPlugin) -> QDragIconButton:
+    def _fix_panel_sizes(self, distance: int, index: int) -> None:
+        min_width = self.swgt_pages.minimumWidth()
+        min_width = (
+            min_width
+            if self.swgt_left_panel.visibleRegion().isEmpty()
+            else min_width + self.swgt_left_panel.minimumWidth()
+        )
+        min_width = (
+            min_width
+            if self.swgt_right_panel.visibleRegion().isEmpty()
+            else min_width + self.swgt_right_panel.minimumWidth()
+        )
+
+        if min_width > self.spl_horizontal.width():
+            page_width = self.spl_horizontal.width() - MINIMUM_PANEL_WIDTH
+            if index == 1:
+                self.spl_horizontal.setSizes([MINIMUM_PANEL_WIDTH, page_width, 0])
+            elif index == 2:
+                self.spl_horizontal.setSizes([0, page_width, MINIMUM_PANEL_WIDTH])
+
+    def _get_dynamic_menu_button(self, plugin: AmuletTool) -> QDragIconButton:
         icon_button = QDragIconButton(self.wgt_dynamic_menu)
         icon_button.clicked.connect(partial(self._show_menu_item, plugin))
         icon_button.setAutoRaise(True)
@@ -83,7 +108,7 @@ class AmuletWindow(QMainWindow):
 
         return icon_button
 
-    def _get_static_menu_button(self, plugin: AmuletPlugin) -> QIconButton:
+    def _get_static_menu_button(self, plugin: AmuletTool) -> QIconButton:
         icon_button = QIconButton(self.wgt_dynamic_menu)
         icon_button.clicked.connect(partial(self._show_menu_item, plugin))
         icon_button.setAutoRaise(True)
@@ -97,7 +122,7 @@ class AmuletWindow(QMainWindow):
 
         return icon_button
 
-    def _load_dynamic_menu(self, plugin: AmuletPlugin, draggable: bool = True) -> None:
+    def _load_dynamic_menu(self, plugin: AmuletTool, draggable: bool = True) -> None:
         icon_button = (
             self._get_dynamic_menu_button(plugin)
             if draggable
@@ -108,7 +133,7 @@ class AmuletWindow(QMainWindow):
         plugin.page.changed.connect(partial(self._change_page, plugin))
         plugin.panel.changed.connect(partial(self._change_left_panel, plugin))
 
-    def _load_static_menu(self, plugin: AmuletPlugin) -> None:
+    def _load_static_menu(self, plugin: AmuletTool) -> None:
         icon_button = self._get_static_menu_button(plugin)
         self.lyt_static_menu.addWidget(icon_button)
 
@@ -121,17 +146,17 @@ class AmuletWindow(QMainWindow):
             item = self.wgt_dynamic_menu.layout().takeAt(index)
             item.widget().deleteLater()
 
-    def _show_menu_item(self, plugin: AmuletPlugin) -> None:
+    def _show_menu_item(self, plugin: AmuletTool) -> None:
         self._active_plugin = plugin
         self.lbl_left_panel_title.setText(plugin.name)
         self._show_page(plugin.page.widget())
         self._show_left_panel(plugin.panel.widget())
 
-    def _change_page(self, plugin: AmuletPlugin, widget: QWidget) -> None:
+    def _change_page(self, plugin: AmuletTool, widget: QWidget) -> None:
         if self._active_plugin == plugin:
             self._show_page(widget)
 
-    def _change_left_panel(self, plugin: AmuletPlugin, widget: QWidget) -> None:
+    def _change_left_panel(self, plugin: AmuletTool, widget: QWidget) -> None:
         if self._active_plugin == plugin:
             self._show_left_panel(widget)
 
@@ -156,6 +181,11 @@ class AmuletWindow(QMainWindow):
                 theme_action.setChecked(True)
             else:
                 theme_action.setChecked(False)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        self._fix_panel_sizes(MINIMUM_PANEL_WIDTH, 1)
+
+        return super().resizeEvent(event)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         focused = QApplication.focusWidget()
@@ -226,13 +256,50 @@ class AmuletWindow(QMainWindow):
         spol_pkg_left_panel.setHorizontalStretch(0)
         spol_pkg_left_panel.setVerticalStretch(0)
         self.swgt_left_panel.setSizePolicy(spol_pkg_left_panel)
-        self.swgt_left_panel.setMinimumSize(QSize(250, 0))
+        self.swgt_left_panel.setMinimumSize(QSize(MINIMUM_PANEL_WIDTH, 0))
 
         # Configure 'Left Panel' layout
         self.lyt_left_panel.addWidget(self.frm_left_panel_header)
         self.lyt_left_panel.addWidget(self.swgt_left_panel)
         self.lyt_left_panel.setSpacing(0)
         self.lyt_left_panel.setContentsMargins(0, 0, 0, 0)
+
+        # Configure 'Right Panel' frame
+        self.frm_right_panel = QFrame(self.spl_horizontal)
+        self.frm_right_panel.setFrameShape(QFrame.NoFrame)
+        self.frm_right_panel.setFrameShadow(QFrame.Raised)
+
+        # Create 'Right Panel' layout
+        self.lyt_right_panel = QVBoxLayout(self.frm_right_panel)
+
+        # Configure 'Right Panel' header
+        self.frm_right_panel_header = QFrame(self.frm_right_panel)
+        self.frm_right_panel_header.setMinimumSize(QSize(0, 25))
+        self.frm_right_panel_header.setFrameShape(QFrame.NoFrame)
+        self.frm_right_panel_header.setFrameShadow(QFrame.Raised)
+
+        # Create title for 'Right Panel'
+        self.lbl_right_panel_title = QLabel(self.frm_right_panel_header)
+
+        # Configure 'Right Panel' header layout
+        self.lyt_right_panel_header = QHBoxLayout(self.frm_right_panel_header)
+        self.lyt_right_panel_header.addWidget(self.lbl_right_panel_title)
+        self.lyt_right_panel_header.setSpacing(0)
+        self.lyt_right_panel_header.setContentsMargins(9, 0, 9, 0)
+
+        # Configure 'Right Panel' stacked widget (container for 'Right Panel' widgets)
+        self.swgt_right_panel = QStackedWidget(self.frm_right_panel)
+        spol_pkg_right_panel = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        spol_pkg_right_panel.setHorizontalStretch(0)
+        spol_pkg_right_panel.setVerticalStretch(0)
+        self.swgt_right_panel.setSizePolicy(spol_pkg_right_panel)
+        self.swgt_right_panel.setMinimumSize(QSize(MINIMUM_PANEL_WIDTH, 0))
+
+        # Configure 'Right Panel' layout
+        self.lyt_right_panel.addWidget(self.frm_right_panel_header)
+        self.lyt_right_panel.addWidget(self.swgt_right_panel)
+        self.lyt_right_panel.setSpacing(0)
+        self.lyt_right_panel.setContentsMargins(0, 0, 0, 0)
 
         # Configure 'Pages' stacked widget (container for 'Page' widgets)
         self.swgt_pages = QStackedWidget(self.spl_horizontal)
@@ -245,6 +312,7 @@ class AmuletWindow(QMainWindow):
         # Configure splitter for 'Application' page and panels
         self.spl_horizontal.addWidget(self.frm_left_panel)
         self.spl_horizontal.addWidget(self.swgt_pages)
+        self.spl_horizontal.addWidget(self.frm_right_panel)
         self.spl_horizontal.setOrientation(Qt.Horizontal)
         self.spl_horizontal.setHandleWidth(0)
 
@@ -325,7 +393,7 @@ class AmuletWindow(QMainWindow):
         self.mnb_amulet.addAction(self.mn_view.menuAction())
 
         self.spl_horizontal.setCollapsible(1, False)
-        self.spl_horizontal.setSizes([250])
+        self.spl_horizontal.setSizes([MINIMUM_PANEL_WIDTH])
 
         # Create 'Status Bar'
         self.sbar_amulet_status = QStatusBar(self)
@@ -341,6 +409,14 @@ class AmuletWindow(QMainWindow):
         self.frm_left_panel.setProperty("backgroundColor", "primary")
         self.frm_left_panel.setProperty("borderRight", "surface")
         self.frm_left_panel.setProperty("color", "on_primary")
+
+        self.frm_right_panel_header.setProperty("backgroundColor", "primary")
+        self.frm_right_panel_header.setProperty("borderBottom", "surface")
+        self.frm_right_panel_header.setProperty("color", "on_surface")
+
+        self.frm_right_panel.setProperty("backgroundColor", "primary")
+        self.frm_right_panel.setProperty("borderLeft", "surface")
+        self.frm_right_panel.setProperty("color", "on_primary")
 
         # Configure 'Application' window
         self.resize(720, 480)

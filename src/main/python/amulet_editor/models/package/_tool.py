@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from amulet_editor.models.package._view import AmuletView
 
 
-class AmuletPlugin(ABC):
+class AmuletTool(ABC):
     @property
     @abstractmethod
     def page(self) -> AmuletView:

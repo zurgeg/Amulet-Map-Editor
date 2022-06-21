@@ -16,6 +16,8 @@ class AmuletEditor:
         self._app.setApplicationName(PUBLIC_DATA["app_name"])
         self._app.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
+        # Load builtin packages
+
         # Create window
         self.main_window = AmuletWindow()
         self.main_window.act_new_window.triggered.connect(self.new_instance)

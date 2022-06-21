@@ -1,9 +1,9 @@
-from amulet_editor.models.package import AmuletPlugin, AmuletView
 from amulet_editor.tools.packages._pages import PackagesPage
 from amulet_editor.tools.packages._panels import PackagesPanel
+from amulet_editor.models.package import AmuletTool, AmuletView
 
 
-class Packages(AmuletPlugin):
+class Packages(AmuletTool):
     def __init__(self) -> None:
         self._page = AmuletView(PackagesPage())
         self._panel = AmuletView(PackagesPanel())

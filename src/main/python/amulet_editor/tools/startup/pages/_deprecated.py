@@ -9,7 +9,7 @@ from amulet_editor.data import build, minecraft, project
 from amulet_editor.data.build import PUBLIC_DATA, get_resource
 from amulet_editor.interface.components import QLinkCard, QPixCard
 from amulet_editor.models.minecraft import LevelData
-from amulet_editor.models.package import AmuletPlugin, AmuletView
+from amulet_editor.models.package import AmuletTool, AmuletView
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QVBoxLayout, QWidget
@@ -190,7 +190,7 @@ class HomePanel(QWidget):
             self.frm_links.layout().addWidget(link_card)
 
 
-class Home(AmuletPlugin):
+class Home(AmuletTool):
     def __init__(self) -> None:
         self.pkg_pages = (HomePage(),)
         self.pkg_panels = (HomePanel(),)

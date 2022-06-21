@@ -1,9 +1,9 @@
-from amulet_editor.models.package import AmuletPlugin, AmuletView
 from amulet_editor.tools.settings._pages import SettingsPage
 from amulet_editor.tools.settings._panels import SettingsPanel
+from amulet_editor.models.package import AmuletTool, AmuletView
 
 
-class Settings(AmuletPlugin):
+class Settings(AmuletTool):
     def __init__(self) -> None:
         self._page = AmuletView(SettingsPage())
         self._panel = AmuletView(SettingsPanel())

@@ -6,7 +6,7 @@ import amulet
 from amulet_editor.data import build, project
 from amulet_editor.interface.components import QLinkCard
 from amulet_editor.models.minecraft import LevelData
-from amulet_editor.models.package import AmuletPlugin, AmuletView
+from amulet_editor.models.package import AmuletTool, AmuletView
 from amulet_editor.tools.project._ui_panel import Ui_ExplorerPanel
 from PySide6.QtCore import QDir, Qt
 from PySide6.QtWidgets import QFileSystemModel, QWidget
@@ -57,7 +57,7 @@ class ProjectPanel(QWidget, Ui_ExplorerPanel):
         self.crd_directory.pushButton().clicked.connect(partial(os.startfile, folder))
 
 
-class Project(AmuletPlugin):
+class Project(AmuletTool):
     def __init__(self) -> None:
         self._page = AmuletView(ProjectPage())
         self._panel = AmuletView(ProjectPanel())

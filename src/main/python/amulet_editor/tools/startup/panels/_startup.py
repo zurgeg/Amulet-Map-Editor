@@ -5,7 +5,7 @@ from typing import Optional
 
 from amulet_editor.data import build
 from amulet_editor.interface.components import QLinkCard
-from amulet_editor.models.package import AmuletPlugin
+from amulet_editor.models.package import AmuletTool
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QVBoxLayout, QWidget
 
