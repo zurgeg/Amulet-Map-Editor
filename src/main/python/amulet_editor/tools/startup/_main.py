@@ -1,13 +1,13 @@
 from functools import partial
 from typing import Optional
 
+from amulet_editor.models.package import AmuletTool, AmuletView
 from amulet_editor.tools.startup.pages._import_level import ImportLevelPage
 from amulet_editor.tools.startup.pages._new_project import NewProjectPage
 from amulet_editor.tools.startup.pages._open_world import OpenWorldPage
 from amulet_editor.tools.startup.pages._select_packages import SelectPackagesPage
 from amulet_editor.tools.startup.pages._startup import StartupPage
 from amulet_editor.tools.startup.panels._startup import StartupPanel
-from amulet_editor.models.package import AmuletTool, AmuletView
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QWidget
 
@@ -31,7 +31,11 @@ class Startup(AmuletTool):
         return self._page
 
     @property
-    def panel(self) -> AmuletView:
+    def primary_panel(self) -> AmuletView:
+        return self._panel
+
+    @property
+    def secondary_panel(self) -> AmuletView:
         return self._panel
 
     @property

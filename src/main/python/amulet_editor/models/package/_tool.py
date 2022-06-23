@@ -12,7 +12,13 @@ class AmuletTool(ABC):
 
     @property
     @abstractmethod
-    def panel(self) -> AmuletView:
+    def primary_panel(self) -> AmuletView:
+        """Returns a view object containing a widget which should be rendered as a panel."""
+        ...
+
+    @property
+    @abstractmethod
+    def secondary_panel(self) -> AmuletView:
         """Returns a view object containing a widget which should be rendered as a panel."""
         ...
 

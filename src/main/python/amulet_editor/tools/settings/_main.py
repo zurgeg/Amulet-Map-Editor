@@ -1,6 +1,6 @@
+from amulet_editor.models.package import AmuletTool, AmuletView
 from amulet_editor.tools.settings._pages import SettingsPage
 from amulet_editor.tools.settings._panels import SettingsPanel
-from amulet_editor.models.package import AmuletTool, AmuletView
 
 
 class Settings(AmuletTool):
@@ -13,7 +13,11 @@ class Settings(AmuletTool):
         return self._page
 
     @property
-    def panel(self) -> AmuletView:
+    def primary_panel(self) -> AmuletView:
+        return self._panel
+
+    @property
+    def secondary_panel(self) -> AmuletView:
         return self._panel
 
     @property

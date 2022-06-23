@@ -54,7 +54,7 @@ class AmuletWindow(QMainWindow):
         self._show_menu_item(self._active_plugin)
 
         # Connect signals
-        self.spl_horizontal.splitterMoved.connect(self._fix_panel_sizes)
+        self.spl_horizontal.splitterMoved.connect(self._update_panel_sizes)
 
         # Connect restyle signal and apply current theme
         appearance.changed.connect(self._theme_changed)
@@ -73,17 +73,17 @@ class AmuletWindow(QMainWindow):
 
             self.mn_appearance.addAction(action)
 
-    def _fix_panel_sizes(self, distance: int, index: int) -> None:
+    def _update_panel_sizes(self, distance: int, index: int) -> None:
         min_width = self.swgt_pages.minimumWidth()
         min_width = (
             min_width
-            if self.swgt_left_panel.visibleRegion().isEmpty()
-            else min_width + self.swgt_left_panel.minimumWidth()
+            if self.swgt_primary_panel.visibleRegion().isEmpty()
+            else min_width + self.swgt_primary_panel.minimumWidth()
         )
         min_width = (
             min_width
-            if self.swgt_right_panel.visibleRegion().isEmpty()
-            else min_width + self.swgt_right_panel.minimumWidth()
+            if self.swgt_secondary_panel.visibleRegion().isEmpty()
+            else min_width + self.swgt_secondary_panel.minimumWidth()
         )
 
         if min_width > self.spl_horizontal.width():
@@ -131,14 +131,18 @@ class AmuletWindow(QMainWindow):
         self.wgt_dynamic_menu.addItem(icon_button)
 
         plugin.page.changed.connect(partial(self._change_page, plugin))
-        plugin.panel.changed.connect(partial(self._change_left_panel, plugin))
+        plugin.secondary_panel.changed.connect(
+            partial(self._change_primary_panel, plugin)
+        )
 
     def _load_static_menu(self, plugin: AmuletTool) -> None:
         icon_button = self._get_static_menu_button(plugin)
         self.lyt_static_menu.addWidget(icon_button)
 
         plugin.page.changed.connect(partial(self._change_page, plugin))
-        plugin.panel.changed.connect(partial(self._change_left_panel, plugin))
+        plugin.secondary_panel.changed.connect(
+            partial(self._change_primary_panel, plugin)
+        )
 
     def _clear_dynamic_menu(self) -> None:
         # TODO: This should also clear corresponding panels and pages
@@ -148,27 +152,27 @@ class AmuletWindow(QMainWindow):
 
     def _show_menu_item(self, plugin: AmuletTool) -> None:
         self._active_plugin = plugin
-        self.lbl_left_panel_title.setText(plugin.name)
+        self.lbl_primary_panel_title.setText(plugin.name)
         self._show_page(plugin.page.widget())
-        self._show_left_panel(plugin.panel.widget())
+        self._show_primary_panel(plugin.secondary_panel.widget())
 
     def _change_page(self, plugin: AmuletTool, widget: QWidget) -> None:
         if self._active_plugin == plugin:
             self._show_page(widget)
 
-    def _change_left_panel(self, plugin: AmuletTool, widget: QWidget) -> None:
+    def _change_primary_panel(self, plugin: AmuletTool, widget: QWidget) -> None:
         if self._active_plugin == plugin:
-            self._show_left_panel(widget)
+            self._show_primary_panel(widget)
 
     def _show_page(self, page: QWidget) -> None:
         if page not in self.swgt_pages.children():
             self.swgt_pages.addWidget(page)
         self.swgt_pages.setCurrentWidget(page)
 
-    def _show_left_panel(self, panel: QWidget) -> None:
-        if panel not in self.swgt_left_panel.children():
-            self.swgt_left_panel.addWidget(panel)
-        self.swgt_left_panel.setCurrentWidget(panel)
+    def _show_primary_panel(self, panel: QWidget) -> None:
+        if panel not in self.swgt_primary_panel.children():
+            self.swgt_primary_panel.addWidget(panel)
+        self.swgt_primary_panel.setCurrentWidget(panel)
 
     def _open_world(self):
         self.open_file_dialog = OpenFileDialog(self)
@@ -183,7 +187,7 @@ class AmuletWindow(QMainWindow):
                 theme_action.setChecked(False)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        self._fix_panel_sizes(MINIMUM_PANEL_WIDTH, 1)
+        self._update_panel_sizes(MINIMUM_PANEL_WIDTH, 1)
 
         return super().resizeEvent(event)
 
@@ -227,79 +231,81 @@ class AmuletWindow(QMainWindow):
         # Create splitter for 'Application' page and panels
         self.spl_horizontal = QSplitter(self.wgt_application)
 
-        # Configure 'Left Panel' frame
-        self.frm_left_panel = QFrame(self.spl_horizontal)
-        self.frm_left_panel.setFrameShape(QFrame.NoFrame)
-        self.frm_left_panel.setFrameShadow(QFrame.Raised)
+        # Configure 'Primary Panel' frame
+        self.frm_primary_panel = QFrame(self.spl_horizontal)
+        self.frm_primary_panel.setFrameShape(QFrame.NoFrame)
+        self.frm_primary_panel.setFrameShadow(QFrame.Raised)
 
-        # Create 'Left Panel' layout
-        self.lyt_left_panel = QVBoxLayout(self.frm_left_panel)
+        # Create 'Primary Panel' layout
+        self.lyt_primary_panel = QVBoxLayout(self.frm_primary_panel)
 
-        # Configure 'Left Panel' header
-        self.frm_left_panel_header = QFrame(self.frm_left_panel)
-        self.frm_left_panel_header.setMinimumSize(QSize(0, 25))
-        self.frm_left_panel_header.setFrameShape(QFrame.NoFrame)
-        self.frm_left_panel_header.setFrameShadow(QFrame.Raised)
+        # Configure 'Primary Panel' header
+        self.frm_primary_panel_header = QFrame(self.frm_primary_panel)
+        self.frm_primary_panel_header.setMinimumSize(QSize(0, 25))
+        self.frm_primary_panel_header.setFrameShape(QFrame.NoFrame)
+        self.frm_primary_panel_header.setFrameShadow(QFrame.Raised)
 
-        # Create title for 'Left Panel'
-        self.lbl_left_panel_title = QLabel(self.frm_left_panel_header)
+        # Create title for 'Primary Panel'
+        self.lbl_primary_panel_title = QLabel(self.frm_primary_panel_header)
 
-        # Configure 'Left Panel' header layout
-        self.lyt_left_panel_header = QHBoxLayout(self.frm_left_panel_header)
-        self.lyt_left_panel_header.addWidget(self.lbl_left_panel_title)
-        self.lyt_left_panel_header.setSpacing(0)
-        self.lyt_left_panel_header.setContentsMargins(9, 0, 9, 0)
+        # Configure 'Primary Panel' header layout
+        self.lyt_primary_panel_header = QHBoxLayout(self.frm_primary_panel_header)
+        self.lyt_primary_panel_header.addWidget(self.lbl_primary_panel_title)
+        self.lyt_primary_panel_header.setSpacing(0)
+        self.lyt_primary_panel_header.setContentsMargins(9, 0, 9, 0)
 
-        # Configure 'Left Panel' stacked widget (container for 'Left Panel' widgets)
-        self.swgt_left_panel = QStackedWidget(self.frm_left_panel)
-        spol_pkg_left_panel = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
-        spol_pkg_left_panel.setHorizontalStretch(0)
-        spol_pkg_left_panel.setVerticalStretch(0)
-        self.swgt_left_panel.setSizePolicy(spol_pkg_left_panel)
-        self.swgt_left_panel.setMinimumSize(QSize(MINIMUM_PANEL_WIDTH, 0))
+        # Configure 'Primary Panel' stacked widget (container for 'Primary Panel' widgets)
+        self.swgt_primary_panel = QStackedWidget(self.frm_primary_panel)
+        spol_pkg_primary_panel = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        spol_pkg_primary_panel.setHorizontalStretch(0)
+        spol_pkg_primary_panel.setVerticalStretch(0)
+        self.swgt_primary_panel.setSizePolicy(spol_pkg_primary_panel)
+        self.swgt_primary_panel.setMinimumSize(QSize(MINIMUM_PANEL_WIDTH, 0))
 
-        # Configure 'Left Panel' layout
-        self.lyt_left_panel.addWidget(self.frm_left_panel_header)
-        self.lyt_left_panel.addWidget(self.swgt_left_panel)
-        self.lyt_left_panel.setSpacing(0)
-        self.lyt_left_panel.setContentsMargins(0, 0, 0, 0)
+        # Configure 'Primary Panel' layout
+        self.lyt_primary_panel.addWidget(self.frm_primary_panel_header)
+        self.lyt_primary_panel.addWidget(self.swgt_primary_panel)
+        self.lyt_primary_panel.setSpacing(0)
+        self.lyt_primary_panel.setContentsMargins(0, 0, 0, 0)
 
-        # Configure 'Right Panel' frame
-        self.frm_right_panel = QFrame(self.spl_horizontal)
-        self.frm_right_panel.setFrameShape(QFrame.NoFrame)
-        self.frm_right_panel.setFrameShadow(QFrame.Raised)
+        # Configure 'Secondary Panel' frame
+        self.frm_secondary_panel = QFrame(self.spl_horizontal)
+        self.frm_secondary_panel.setFrameShape(QFrame.NoFrame)
+        self.frm_secondary_panel.setFrameShadow(QFrame.Raised)
 
-        # Create 'Right Panel' layout
-        self.lyt_right_panel = QVBoxLayout(self.frm_right_panel)
+        # Create 'Secondary Panel' layout
+        self.lyt_secondary_panel = QVBoxLayout(self.frm_secondary_panel)
 
-        # Configure 'Right Panel' header
-        self.frm_right_panel_header = QFrame(self.frm_right_panel)
-        self.frm_right_panel_header.setMinimumSize(QSize(0, 25))
-        self.frm_right_panel_header.setFrameShape(QFrame.NoFrame)
-        self.frm_right_panel_header.setFrameShadow(QFrame.Raised)
+        # Configure 'Secondary Panel' header
+        self.frm_secondary_panel_header = QFrame(self.frm_secondary_panel)
+        self.frm_secondary_panel_header.setMinimumSize(QSize(0, 25))
+        self.frm_secondary_panel_header.setFrameShape(QFrame.NoFrame)
+        self.frm_secondary_panel_header.setFrameShadow(QFrame.Raised)
 
-        # Create title for 'Right Panel'
-        self.lbl_right_panel_title = QLabel(self.frm_right_panel_header)
+        # Create title for 'Secondary Panel'
+        self.lbl_secondary_panel_title = QLabel(self.frm_secondary_panel_header)
 
-        # Configure 'Right Panel' header layout
-        self.lyt_right_panel_header = QHBoxLayout(self.frm_right_panel_header)
-        self.lyt_right_panel_header.addWidget(self.lbl_right_panel_title)
-        self.lyt_right_panel_header.setSpacing(0)
-        self.lyt_right_panel_header.setContentsMargins(9, 0, 9, 0)
+        # Configure 'Secondary Panel' header layout
+        self.lyt_secondary_panel_header = QHBoxLayout(self.frm_secondary_panel_header)
+        self.lyt_secondary_panel_header.addWidget(self.lbl_secondary_panel_title)
+        self.lyt_secondary_panel_header.setSpacing(0)
+        self.lyt_secondary_panel_header.setContentsMargins(9, 0, 9, 0)
 
-        # Configure 'Right Panel' stacked widget (container for 'Right Panel' widgets)
-        self.swgt_right_panel = QStackedWidget(self.frm_right_panel)
-        spol_pkg_right_panel = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
-        spol_pkg_right_panel.setHorizontalStretch(0)
-        spol_pkg_right_panel.setVerticalStretch(0)
-        self.swgt_right_panel.setSizePolicy(spol_pkg_right_panel)
-        self.swgt_right_panel.setMinimumSize(QSize(MINIMUM_PANEL_WIDTH, 0))
+        # Configure 'Secondary Panel' stacked widget (container for 'Secondary Panel' widgets)
+        self.swgt_secondary_panel = QStackedWidget(self.frm_secondary_panel)
+        spol_pkg_secondary_panel = QSizePolicy(
+            QSizePolicy.Ignored, QSizePolicy.Preferred
+        )
+        spol_pkg_secondary_panel.setHorizontalStretch(0)
+        spol_pkg_secondary_panel.setVerticalStretch(0)
+        self.swgt_secondary_panel.setSizePolicy(spol_pkg_secondary_panel)
+        self.swgt_secondary_panel.setMinimumSize(QSize(MINIMUM_PANEL_WIDTH, 0))
 
-        # Configure 'Right Panel' layout
-        self.lyt_right_panel.addWidget(self.frm_right_panel_header)
-        self.lyt_right_panel.addWidget(self.swgt_right_panel)
-        self.lyt_right_panel.setSpacing(0)
-        self.lyt_right_panel.setContentsMargins(0, 0, 0, 0)
+        # Configure 'Secondary Panel' layout
+        self.lyt_secondary_panel.addWidget(self.frm_secondary_panel_header)
+        self.lyt_secondary_panel.addWidget(self.swgt_secondary_panel)
+        self.lyt_secondary_panel.setSpacing(0)
+        self.lyt_secondary_panel.setContentsMargins(0, 0, 0, 0)
 
         # Configure 'Pages' stacked widget (container for 'Page' widgets)
         self.swgt_pages = QStackedWidget(self.spl_horizontal)
@@ -310,9 +316,9 @@ class AmuletWindow(QMainWindow):
         self.swgt_pages.setMinimumSize(QSize(300, 200))
 
         # Configure splitter for 'Application' page and panels
-        self.spl_horizontal.addWidget(self.frm_left_panel)
+        self.spl_horizontal.addWidget(self.frm_primary_panel)
         self.spl_horizontal.addWidget(self.swgt_pages)
-        self.spl_horizontal.addWidget(self.frm_right_panel)
+        self.spl_horizontal.addWidget(self.frm_secondary_panel)
         self.spl_horizontal.setOrientation(Qt.Horizontal)
         self.spl_horizontal.setHandleWidth(0)
 
@@ -402,21 +408,21 @@ class AmuletWindow(QMainWindow):
         self.frm_static_menu.setProperty("border", "none")
         self.frm_static_menu.setProperty("backgroundColor", "surface")
 
-        self.frm_left_panel_header.setProperty("backgroundColor", "primary")
-        self.frm_left_panel_header.setProperty("borderBottom", "surface")
-        self.frm_left_panel_header.setProperty("color", "on_surface")
+        self.frm_primary_panel_header.setProperty("backgroundColor", "primary")
+        self.frm_primary_panel_header.setProperty("borderBottom", "surface")
+        self.frm_primary_panel_header.setProperty("color", "on_surface")
 
-        self.frm_left_panel.setProperty("backgroundColor", "primary")
-        self.frm_left_panel.setProperty("borderRight", "surface")
-        self.frm_left_panel.setProperty("color", "on_primary")
+        self.frm_primary_panel.setProperty("backgroundColor", "primary")
+        self.frm_primary_panel.setProperty("borderRight", "surface")
+        self.frm_primary_panel.setProperty("color", "on_primary")
 
-        self.frm_right_panel_header.setProperty("backgroundColor", "primary")
-        self.frm_right_panel_header.setProperty("borderBottom", "surface")
-        self.frm_right_panel_header.setProperty("color", "on_surface")
+        self.frm_secondary_panel_header.setProperty("backgroundColor", "primary")
+        self.frm_secondary_panel_header.setProperty("borderBottom", "surface")
+        self.frm_secondary_panel_header.setProperty("color", "on_surface")
 
-        self.frm_right_panel.setProperty("backgroundColor", "primary")
-        self.frm_right_panel.setProperty("borderLeft", "surface")
-        self.frm_right_panel.setProperty("color", "on_primary")
+        self.frm_secondary_panel.setProperty("backgroundColor", "primary")
+        self.frm_secondary_panel.setProperty("borderLeft", "surface")
+        self.frm_secondary_panel.setProperty("color", "on_primary")
 
         # Configure 'Application' window
         self.resize(720, 480)
@@ -460,7 +466,7 @@ class AmuletWindow(QMainWindow):
         self.act_new_window.setShortcut(QCoreApplication.translate("AmuletWindow", "Ctrl+Shift+N", None))
         self.act_new_project.setText(QCoreApplication.translate("AmuletWindow", "New Project...", None))
         self.act_new_project.setShortcut(QCoreApplication.translate("AmuletWindow", "Ctrl+N", None))
-        self.lbl_left_panel_title.setText(QCoreApplication.translate("AmuletWindow", "App Name", None))
+        self.lbl_primary_panel_title.setText(QCoreApplication.translate("AmuletWindow", "App Name", None))
         self.mn_file.setTitle(QCoreApplication.translate("AmuletWindow", "File", None))
         self.mn_preferences.setTitle(QCoreApplication.translate("AmuletWindow", "Preferences", None))
         self.mn_open_recent.setTitle(QCoreApplication.translate("AmuletWindow", "Open Recent", None))
