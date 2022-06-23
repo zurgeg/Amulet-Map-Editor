@@ -5,10 +5,9 @@ from typing import Optional
 
 import amulet
 from amulet_editor.data import build, minecraft, paths
-from amulet_editor.data.build import PUBLIC_DATA
 from amulet_editor.interface.components import QElidedLabel, QPixCard
-from amulet_editor.tools.startup._components import QIconButton, QIconCard
 from amulet_editor.models.minecraft import LevelData
+from amulet_editor.tools.startup._components import QIconButton
 from PySide6.QtCore import QCoreApplication, QSize, Qt
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (

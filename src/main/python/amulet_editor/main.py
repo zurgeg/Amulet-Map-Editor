@@ -1,5 +1,4 @@
 import sys
-import traceback
 
 
 class PythonVersionError(Exception):
