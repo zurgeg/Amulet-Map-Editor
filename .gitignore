@@ -116,3 +116,6 @@ venv.bak/
 /plugins
 /config
 /cache
+
+Pipfile
+Pipfile.lock
